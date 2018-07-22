@@ -1,18 +1,12 @@
 package goncharov.hkbTest.test;
 
+import goncharov.hkbTest.handler.SchemaHandler;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.catalyst.expressions.Expression;
-import org.apache.spark.sql.types.*;
-import scala.collection.Seq;
 import scala.collection.mutable.ArraySeq;
-import scala.tools.nsc.backend.icode.Members;
 
-import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class Test {
 
@@ -33,26 +27,46 @@ public class Test {
 
 
 //        test_1();
-        test_2();
+        test_4();
 
         sparkSession.close();
         sparkContext.close();
+    }
+
+    private static void test_4(){
+
+        float l = 1.24f;
+        System.out.println(Float.toString(l / 2));
+
+    }
+
+    private static void test_3(){
+
+        Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
+        cityData = SchemaHandler.setSchemaFromCsv(cityData);
+        cityData = cityData.sort("City", "dt").select("City", "Country", "dt", "AverageTemperature");
+        cityData = cityData.filter(cityData.col("AverageTemperature").isNotNull());
+        int dt = cityData.first().fieldIndex("dt");
+        String year = cityData.first().getString(dt).split("-")[0];
+        System.out.println("String = " + year);
+        System.out.println("1743-05-05.startsWith(1743) = " + new String("1744-05-05").startsWith(year));
     }
 
     private static void test_2(){
 
         /** Изменить схему */
         Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
-
-        Row header = cityData.first();
-        ArraySeq<String> schema = new ArraySeq<>(header.length());
-
-        for (int i = 0; i < header.length(); i++) {
-            schema.update(i, header.getString(i));
-        }
-
-        cityData = cityData.toDF(schema);
-        cityData.filter(row -> !(row.equals(header))).show(5);
+        cityData = SchemaHandler.setSchemaFromCsv(cityData);
+        Dataset<Row> dtData = cityData.select("dt");
+        cityData.show(5);
+        dtData.show(5);
+        dtData = dtData.join(cityData.select("City", "dt"), "dt");
+        dtData.show(5);
+//        cityData = SchemaHandler.setSchemaFromCsv(cityData);
+//        cityData.show(10);
+//        cityData.write().parquet("C:/Users/VLAD/Desktop/HCB/myParq");
+//
+//        sparkSession.read().parquet("C:/Users/VLAD/Desktop/HCB/myParq").show(10);
 
 
 //        cityData = cityData.select(cityData.col("_c0").cast("my"));
