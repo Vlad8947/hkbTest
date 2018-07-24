@@ -1,38 +1,59 @@
 package goncharov.hkbTest.handler;
 
-import org.apache.spark.sql.Column;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.StructType;
-import scala.collection.mutable.ArraySeq;
+import org.apache.spark.storage.StorageLevel;
 
-public abstract class DataHandler {
+import java.io.Serializable;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-    protected ArraySeq<Column> initColumns;
+public abstract class DataHandler implements Serializable {
+
+//    protected ArraySeq<Column> initColumns;
+    protected StructType finalStructType;
+
+//    protected Column colDt;
+//    protected Column colCity;
+//    protected Column colCountry;
+//    protected Column colAverageTemperature;
+
 
     protected static final String
-            colCity = "City",
-            colCountry = "Country",
-            colDt = "dt";
-    protected String colAverageTemperature;
+            strCity = "City",
+            strCountry = "Country",
+            strDt = "dt";
+    protected String strAverageTemperature;
     // For Year
     protected String
-            colAverageTemperatureForYear,
-            colMinTemperatureForYear,
-            colMaxTemperatureForYear;
+            strAverageTemperatureForYear,
+            strMinTemperatureForYear,
+            strMaxTemperatureForYear;
     // For TenYears
     protected String
-            colAverageTemperatureForTenYears,
-            colMinTemperatureForTenYears,
-            colMaxTemperatureForTenYears;
+            strAverageTemperatureForTenYears,
+            strMinTemperatureForTenYears,
+            strMaxTemperatureForTenYears;
     // For Century
     protected String
-            colAverageTemperatureForTenCentury,
-            colMinTemperatureForTenCentury,
-            colMaxTemperatureForTenCentury;
+            strAverageTemperatureForTenCentury,
+            strMinTemperatureForTenCentury,
+            strMaxTemperatureForTenCentury;
 
-    protected void setInitColumns(String... initColNames) {
-        initColumns = new ArraySeq<>(initColNames.length);
-        for(int i = 0; i < initColNames.length; i++) {
-            initColumns.update(i, new Column(initColNames[i]));
-        }
+//    abstract protected Column initColumn(String name);
+
+    protected void setFinalStructType(StructType structType){
+        this.finalStructType = structType;
     }
+
+//    protected void setInitColumns(String... initColNames) {
+//        initColumns = new ArraySeq<>(initColNames.length);
+//        for(int i = 0; i < initColNames.length; i++) {
+//            initColumns.update(i, new Column(initColNames[i]));
+//        }
+//    }
 }

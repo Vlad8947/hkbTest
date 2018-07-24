@@ -1,5 +1,7 @@
 package goncharov.hkbTest.test;
 
+import goncharov.hkbTest.handler.CityTempHandler;
+import goncharov.hkbTest.handler.GlobalTempHandler;
 import goncharov.hkbTest.handler.SchemaHandler;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -25,18 +27,24 @@ public class Test {
                 .config("spark.some.config.option", "some-value2")
                 .getOrCreate();
 
+        try {
 
 //        test_1();
-        test_4();
+            test_4();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         sparkSession.close();
         sparkContext.close();
     }
 
-    private static void test_4(){
+    private static void test_4() throws AnalysisException {
 
-        float l = 1.24f;
-        System.out.println(Float.toString(l / 2));
+        Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
+        CityTempHandler handler = new CityTempHandler();
+        handler.process(cityData);
 
     }
 

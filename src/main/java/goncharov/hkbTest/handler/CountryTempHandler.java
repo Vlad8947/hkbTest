@@ -10,17 +10,17 @@ public class CountryTempHandler extends DataHandler {
 
     public CountryTempHandler() {
 
-        colAverageTemperatureForYear = "AverageCountryTemperatureForYear";
-        colMinTemperatureForYear = "MinCountryTemperatureForYear";
-        colMaxTemperatureForYear = "MaxCountryTemperatureForYear";
+        strAverageTemperatureForYear = "AverageCountryTemperatureForYear";
+        strMinTemperatureForYear = "MinCountryTemperatureForYear";
+        strMaxTemperatureForYear = "MaxCountryTemperatureForYear";
 
-        colAverageTemperatureForTenYears = "AverageCountryTemperatureForTenYears";
-        colMinTemperatureForTenYears = "MinCountryTemperatureForTenYears";
-        colMaxTemperatureForTenYears = "MaxCountryTemperatureForTenYears";
+        strAverageTemperatureForTenYears = "AverageCountryTemperatureForTenYears";
+        strMinTemperatureForTenYears = "MinCountryTemperatureForTenYears";
+        strMaxTemperatureForTenYears = "MaxCountryTemperatureForTenYears";
 
-        colAverageTemperatureForTenCentury = "AverageCountryTemperatureForCentury";
-        colMinTemperatureForTenCentury = "MinCountryTemperatureForCentury";
-        colMaxTemperatureForTenCentury = "MaxCountryTemperatureForCentury";
+        strAverageTemperatureForTenCentury = "AverageCountryTemperatureForCentury";
+        strMinTemperatureForTenCentury = "MinCountryTemperatureForCentury";
+        strMaxTemperatureForTenCentury = "MaxCountryTemperatureForCentury";
     }
 
 

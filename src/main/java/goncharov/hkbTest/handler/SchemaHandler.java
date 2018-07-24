@@ -13,12 +13,14 @@ import java.util.List;
 
 public class SchemaHandler {
 
+    private static Row header;
+
     public SchemaHandler() {
     }
 
     public static Dataset<Row> setSchemaFromCsv(Dataset<Row> dataset) {
 
-        Row header = dataset.first();
+        header = dataset.first();
         ArraySeq<String> schema = new ArraySeq<>(header.length());
 
         for (int i = 0; i < header.length(); i++) {
