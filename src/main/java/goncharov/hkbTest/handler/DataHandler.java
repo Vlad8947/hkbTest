@@ -16,6 +16,7 @@ public abstract class DataHandler implements Serializable {
 
 //    protected ArraySeq<Column> initColumns;
     protected StructType finalStructType;
+    protected SQLContext sqlContext;
 
 //    protected Column colDt;
 //    protected Column colCity;
@@ -44,7 +45,11 @@ public abstract class DataHandler implements Serializable {
             strMinTemperatureForTenCentury,
             strMaxTemperatureForTenCentury;
 
-//    abstract protected Column initColumn(String name);
+    protected DataHandler(SQLContext sqlContext) {
+        this.sqlContext = sqlContext;
+    }
+
+    //    abstract protected Column initColumn(String name);
 
     protected void setFinalStructType(StructType structType){
         this.finalStructType = structType;

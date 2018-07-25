@@ -6,6 +6,8 @@ import goncharov.hkbTest.handler.SchemaHandler;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.types.DataTypes;
+import scala.Int;
 import scala.collection.mutable.ArraySeq;
 
 import java.util.*;
@@ -15,6 +17,10 @@ public class Test {
     private static SparkConf sparkConf;
     private static JavaSparkContext sparkContext;
     private static SparkSession sparkSession;
+
+    private static int firstYear;
+    private static int lastYear;
+    private static int year;
 
     public static void main(String[] args) {
 
@@ -30,7 +36,7 @@ public class Test {
         try {
 
 //        test_1();
-            test_4();
+            test_5();
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -40,11 +46,35 @@ public class Test {
         sparkContext.close();
     }
 
-    private static void test_4() throws AnalysisException {
+    private static void test_5 () throws InterruptedException {
+        long t1 = System.currentTimeMillis();
+        String s = "";
+        
+        Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
+        CityTempHandler handler = new CityTempHandler(cityData.sqlContext());
+        handler.process(cityData);
+
+        System.out.println((float) (System.currentTimeMillis() - t1)/1000/60);
+
+    }
+
+    private static void test_4() {
 
         Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
-        CityTempHandler handler = new CityTempHandler();
-        handler.process(cityData);
+
+        firstYear = lastYear = 1800;
+        long t1 = System.currentTimeMillis();
+        SchemaHandler.setSchemaFromCsv(cityData).select("dt").foreach(
+                row -> {
+                    year = Integer.parseInt(row.getString(0).split("-")[0]);
+                    if (year < firstYear) firstYear = year;
+                    if (year > lastYear) lastYear = year;
+                }
+        );
+        System.out.println(System.currentTimeMillis() - t1);
+        System.out.println(firstYear + " " + lastYear);
+
+//        int f = Integer.parseInt(set.select(strDt).groupBy().min("value").first().<String>getAs(0).split("-")[0]);
 
     }
 

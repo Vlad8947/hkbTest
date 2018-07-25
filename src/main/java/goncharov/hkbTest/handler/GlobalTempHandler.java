@@ -2,11 +2,12 @@ package goncharov.hkbTest.handler;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 
 public class GlobalTempHandler extends DataHandler {
 
-    public GlobalTempHandler() {
-
+    public GlobalTempHandler(SQLContext sqlContext) {
+        super(sqlContext);
         strAverageTemperature = "LandAverageTemperature";
 
         strAverageTemperatureForYear = "AverageGlobalTemperatureForYear";
