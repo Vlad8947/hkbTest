@@ -46,10 +46,10 @@ public class Test {
         sparkContext.close();
     }
 
-    private static void test_5 () throws InterruptedException {
+    private static void test_5 () {
         long t1 = System.currentTimeMillis();
         String s = "";
-        
+
         Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
         CityTempHandler handler = new CityTempHandler(cityData.sqlContext());
         handler.process(cityData);

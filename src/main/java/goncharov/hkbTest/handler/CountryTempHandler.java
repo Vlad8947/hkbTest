@@ -16,13 +16,13 @@ public class CountryTempHandler extends DataHandler {
         strMinTemperatureForYear = "MinCountryTemperatureForYear";
         strMaxTemperatureForYear = "MaxCountryTemperatureForYear";
 
-        strAverageTemperatureForTenYears = "AverageCountryTemperatureForTenYears";
-        strMinTemperatureForTenYears = "MinCountryTemperatureForTenYears";
-        strMaxTemperatureForTenYears = "MaxCountryTemperatureForTenYears";
+        strAverageTemperatureForDecade = "AverageCountryTemperatureForTenYears";
+        strMinTemperatureForDecade = "MinCountryTemperatureForTenYears";
+        strMaxTemperatureForDecade = "MaxCountryTemperatureForTenYears";
 
-        strAverageTemperatureForTenCentury = "AverageCountryTemperatureForCentury";
-        strMinTemperatureForTenCentury = "MinCountryTemperatureForCentury";
-        strMaxTemperatureForTenCentury = "MaxCountryTemperatureForCentury";
+        strAverageTemperatureForCentury = "AverageCountryTemperatureForCentury";
+        strMinTemperatureForCentury = "MinCountryTemperatureForCentury";
+        strMaxTemperatureForCentury = "MaxCountryTemperatureForCentury";
     }
 
 

@@ -14,13 +14,13 @@ public class GlobalTempHandler extends DataHandler {
         strMinTemperatureForYear = "MinGlobalTemperatureForYear";
         strMaxTemperatureForYear = "MaxGlobalTemperatureForYear";
 
-        strAverageTemperatureForTenYears = "AverageGlobalTemperatureForTenYears";
-        strMinTemperatureForTenYears = "MinGlobalTemperatureForTenYears";
-        strMaxTemperatureForTenYears = "MaxGlobalTemperatureForTenYears";
+        strAverageTemperatureForDecade = "AverageGlobalTemperatureForTenYears";
+        strMinTemperatureForDecade = "MinGlobalTemperatureForTenYears";
+        strMaxTemperatureForDecade = "MaxGlobalTemperatureForTenYears";
 
-        strAverageTemperatureForTenCentury = "AverageGlobalTemperatureForCentury";
-        strMinTemperatureForTenCentury = "MinGlobalTemperatureForCentury";
-        strMaxTemperatureForTenCentury = "MaxGlobalTemperatureForCentury";
+        strAverageTemperatureForCentury = "AverageGlobalTemperatureForCentury";
+        strMinTemperatureForCentury = "MinGlobalTemperatureForCentury";
+        strMaxTemperatureForCentury = "MaxGlobalTemperatureForCentury";
 
         finalStructType = SchemaHandler.createStructType(strDt, strAverageTemperatureForYear);
     }

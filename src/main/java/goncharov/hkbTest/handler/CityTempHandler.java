@@ -1,38 +1,20 @@
 package goncharov.hkbTest.handler;
 
-import org.apache.spark.api.java.function.ForeachFunction;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.apache.spark.storage.StorageLevel;
+import scala.Tuple3;
 import scala.collection.Seq;
+import scala.collection.mutable.ArraySeq;
+import scala.collection.mutable.ListBuffer;
+import scala.collection.mutable.StringBuilder;
+import scala.sys.process.ProcessBuilderImpl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.sql.Struct;
+import java.util.*;
 
 public class CityTempHandler extends DataHandler {
-
-    private static Dataset<Row> initData;
-    private static List<Row> forYearList;
-    private static Dataset<Row> citiesData;
-    private static Dataset<String> yearsData;
-    private static Seq<String> avTempStrSeq;
-
-    private static String city;
-    private static String country;
-    private static String year;
-    private static float yearAverageTemp;
-
-    private static int firstYear;
-    private static int lastYear;
-//    private static int year;
-    private static float tempSum = 0;
-    private static int monthSum = 0;
-
 
     public CityTempHandler(SQLContext sqlContext) {
         super(sqlContext);
@@ -42,139 +24,99 @@ public class CityTempHandler extends DataHandler {
         strMinTemperatureForYear = "MinCityTemperatureForYear";
         strMaxTemperatureForYear = "MaxCityTemperatureForYear";
 
-        strAverageTemperatureForTenYears = "AverageCityTemperatureForTenYears";
-        strMinTemperatureForTenYears = "MinCityTemperatureForTenYears";
-        strMaxTemperatureForTenYears = "MaxCityTemperatureForTenYears";
+        strAverageTemperatureForDecade = "AverageCityTemperatureForDecade";
+        strMinTemperatureForDecade = "MinCityTemperatureForDecade";
+        strMaxTemperatureForDecade = "MaxCityTemperatureForDecade";
 
-        strAverageTemperatureForTenCentury = "AverageCityTemperatureForCentury";
-        strMinTemperatureForTenCentury = "MinCityTemperatureForCentury";
-        strMaxTemperatureForTenCentury = "MaxCityTemperatureForCentury";
+        strAverageTemperatureForCentury = "AverageCityTemperatureForCentury";
+        strMinTemperatureForCentury = "MinCityTemperatureForCentury";
+        strMaxTemperatureForCentury = "MaxCityTemperatureForCentury";
     }
 
-    public Dataset<Row> process(Dataset<Row> data) {
-        initData = SchemaHandler.setSchemaFromCsv(data);
-        initData = initData.filter(initCol(strAverageTemperature).isNotNull())
-                .select(initCol(strDt), initCol(strCity), initCol(strCountry), initCol(strAverageTemperature).cast(DataTypes.FloatType));
+    public Dataset<Row> process(Dataset<Row> initData) {
+        initData = SchemaHandler.setSchemaFromCsv(initData);
+        initData =
+                initData
+                        .filter(initData.col(strAverageTemperature).isNotNull())
+                        .select(
+                                initData.col(strDt),
+                                initData.col(strCity),
+                                initData.col(strCountry),
+                                initData.col(strAverageTemperature).cast(DataTypes.FloatType)
+                        );
+
         initData.persist(StorageLevel.MEMORY_ONLY());
 
         initData.printSchema();
 
-        citiesData = initData.select(strCity, strCountry).dropDuplicates();
+        Dataset<Row> yearsData =
+                initData.map(
+                        (MapFunction<Row, Tuple3<String, String, String>>)
+                                row -> {
+                                    String year = row.getString(0).split("-")[0];
+                                    String yearOfTen = year.substring(0, 3);
+                                    String century = year.substring(0, 2);
+                                    return new Tuple3(year, yearOfTen, century);
+                                }, Encoders.tuple(Encoders.STRING(), Encoders.STRING(), Encoders.STRING()))
+                        .toDF(strYear, strDecade, strCentury)
+                        .dropDuplicates(strYear);
 
-//        long t1 = System.currentTimeMillis();
+        initData =
+                initData
+                        .join(yearsData, initData.col(strDt).startsWith(yearsData.col(strYear)));
+//        initData.sort(strCity, strYear).show();
 
-        yearsData = initData.select(strDt).map(
-                row -> row.getString(0).split("-")[0] ,
-                Encoders.STRING()
-        ).dropDuplicates();
+        Dataset<Row> dataForYear =
+                initData
+                        .groupBy(
+                                initData.col(strCity),
+                                initData.col(strCountry),
+                                initData.col(strYear)
+                        )
+                        .mean(strAverageTemperature)
+                        .toDF(strCity, strCountry, strYear, strAverageTemperatureForYear)
+                        .join(yearsData, strYear);
+//        dataForYear.sort(strCity, strYear).show();
 
-//        System.out.println(System.currentTimeMillis() - t1);
-        ArrayList<StructField> structFields = new ArrayList<>();
-        structFields.add(DataTypes.createStructField(strDt, DataTypes.StringType, true));
-        structFields.add(DataTypes.createStructField(strCity, DataTypes.StringType, true));
-        structFields.add(DataTypes.createStructField(strCountry, DataTypes.StringType, true));
-        structFields.add(DataTypes.createStructField(strAverageTemperatureForYear, DataTypes.FloatType, true));
-        StructType forYearStructType = DataTypes.createStructType(structFields);
+        Dataset<Row> dataForDecade =
+                dataForYear
+                        .groupBy(
+                                dataForYear.col(strCity),
+                                dataForYear.col(strDecade)
+                        ).mean(strAverageTemperatureForYear)
+                        .toDF(strCity, strDecade, strAverageTemperatureForDecade)
+                        .join(yearsData.select(strDecade, strCentury).dropDuplicates(strDecade), strDecade);
+//        dataForDecade.sort(strCity, strDecade).show();
 
-//        forYearList = sqlContext.createDataFrame(new ArrayList<Row>(), structType);
-//        forYearList.printSchema();
+        Dataset<Row> dataForCentury =
+                dataForDecade
+                        .groupBy(
+                                dataForDecade.col(strCity),
+                                dataForDecade.col(strCentury)
+                        ).mean(strAverageTemperatureForDecade)
+                        .toDF(strCity, strCentury, strAverageTemperatureForCentury);
+//        dataForCentury.sort(strCity, strCentury).show();
 
-//        String year = "1744";
-//        String city = "Århus";
+        ArraySeq<String> decadeColumns = new ArraySeq<>(2);
+        decadeColumns.update(0, strCity);
+        decadeColumns.update(1, strDecade);
 
-//        averageTemperature = initData
-//                .filter(initCol(strCity).like(city))
-//                .filter(initCol(strDt).startsWith(year))
-//                .groupBy()
-//                .mean(strAverageTemperature)
-//                .toDF(strAverageTemperatureForYear);
-//
-//        avTempStrSeq = new ArraySeq<>(1);
-//        ((ArraySeq<String>) avTempStrSeq).update(0, strAverageTemperatureForYear);
-//
-//        forYearList.join(averageTemperature, avTempStrSeq, "full").show();
+        ArraySeq<String> centuryColumns = new ArraySeq<>(2);
+        centuryColumns.update(0, strCity);
+        centuryColumns.update(1, strCentury);
 
-        forYearList = new ArrayList<>();
+        Dataset<Row> finalData =
+                dataForYear
+                        .join(
+                                dataForDecade.select(strCity, strDecade, strAverageTemperatureForDecade),
+                                decadeColumns)
+                        .join(
+                                dataForCentury.select(strCity, strCentury, strAverageTemperatureForCentury),
+                                centuryColumns);
 
-        yearsData.persist(StorageLevel.MEMORY_ONLY());
-        citiesData.persist(StorageLevel.MEMORY_ONLY());
+        finalData.sort(strCity, strYear).show();
 
-        Dataset<Row> years = yearsData.select(yearsData.col("value").as(strDt));
-
-        initData = initData.join(years, initData.col(strDt)
-                .startsWith(years.col(strDt)))
-                .drop(initCol(strDt));
-        initData.persist(StorageLevel.MEMORY_ONLY());
-        initData.groupBy(initCol(strCity), initCol(strCountry), initCol(strDt)).mean(strAverageTemperature)
-                .show();
-
-
-//        yearsData.foreach(
-//                yearStr -> {
-//
-//                    year = "1800";
-//        citiesData.foreach(
-//                city_country -> {
-//
-//                    city = city_country.<String>getAs(strCity);
-//                    country = city_country.<String>getAs(strCountry);
-//
-//                    yearAverageTemp =
-//                            initData.filter(initCol(strCity).like(city))
-//                                    .filter(initCol(strDt).startsWith(year))
-//                                    .groupBy()
-//                                    .mean(strAverageTemperature)
-//                                    .first()
-//                                    .getFloat(0);
-//
-//                    forYearList.add(
-//                            RowFactory.create(
-//                                    city,
-//                                    country,
-//                                    year,
-//                                    yearAverageTemp
-//                            )
-//                    );
-//
-//                }
-//
-//        );
-//
-//                }
-//        );
-
-//        city_country -> {
-//
-//            city = city_country.<String>getAs(strCity);
-//            country = city_country.<String>getAs(strCountry);
-//
-//            yearAverageTemp =
-//                    initData.filter(initCol(strCity).like(city))
-//                            .filter(initCol(strDt).startsWith(year))
-//                            .groupBy()
-//                            .mean(strAverageTemperature)
-//                            .first()
-//                            .getFloat(0);
-//
-//            forYearList.add(
-//                    RowFactory.create(
-//                            city,
-//                            country,
-//                            year,
-//                            yearAverageTemp
-//                    )
-//            );
-//
-//        }
-
-//        System.out.println(forYearList.get(0).toString());
-//        sqlContext.createDataFrame(forYearList, forYearStructType).show();
-
-        return null;
-    }
-
-    private Column initCol(String name) {
-        return initData.col(name);
+        return finalData;
     }
 
 }

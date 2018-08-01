@@ -27,23 +27,26 @@ public abstract class DataHandler implements Serializable {
     protected static final String
             strCity = "City",
             strCountry = "Country",
-            strDt = "dt";
+            strDt = "dt",
+            strYear = "year",
+            strDecade = "decade",
+            strCentury = "century";
     protected String strAverageTemperature;
     // For Year
     protected String
             strAverageTemperatureForYear,
             strMinTemperatureForYear,
             strMaxTemperatureForYear;
-    // For TenYears
+    // For Decade
     protected String
-            strAverageTemperatureForTenYears,
-            strMinTemperatureForTenYears,
-            strMaxTemperatureForTenYears;
+            strAverageTemperatureForDecade,
+            strMinTemperatureForDecade,
+            strMaxTemperatureForDecade;
     // For Century
     protected String
-            strAverageTemperatureForTenCentury,
-            strMinTemperatureForTenCentury,
-            strMaxTemperatureForTenCentury;
+            strAverageTemperatureForCentury,
+            strMinTemperatureForCentury,
+            strMaxTemperatureForCentury;
 
     protected DataHandler(SQLContext sqlContext) {
         this.sqlContext = sqlContext;
