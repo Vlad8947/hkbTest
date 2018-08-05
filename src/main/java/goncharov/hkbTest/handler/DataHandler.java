@@ -1,28 +1,17 @@
 package goncharov.hkbTest.handler;
 
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.types.StructType;
 import org.apache.spark.storage.StorageLevel;
+import scala.Tuple3;
+import scala.collection.mutable.ArraySeq;
 
 import java.io.Serializable;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class DataHandler implements Serializable {
 
-//    protected ArraySeq<Column> initColumns;
-    protected StructType finalStructType;
-    protected SQLContext sqlContext;
-
-//    protected Column colDt;
-//    protected Column colCity;
-//    protected Column colCountry;
-//    protected Column colAverageTemperature;
-
+    protected Dataset<Row> initData, yearsList, yearData, decadeData, centuryData;
+    protected ArraySeq<String> yearColumns, decadeColumns, centuryColumns;
 
     protected static final String
             strCity = "City",
@@ -48,20 +37,51 @@ public abstract class DataHandler implements Serializable {
             strMinTemperatureForCentury,
             strMaxTemperatureForCentury;
 
-    protected DataHandler(SQLContext sqlContext) {
-        this.sqlContext = sqlContext;
+    protected DataHandler(Dataset<Row> data) {
+        setColumnNames();
+        setSeqColumns();
+        setInitData(data);
     }
 
-    //    abstract protected Column initColumn(String name);
-
-    protected void setFinalStructType(StructType structType){
-        this.finalStructType = structType;
+    public Dataset<Row> processAndGetData() {
+        initData.persist(StorageLevel.MEMORY_ONLY());
+        setYearsList();
+        yearsList.persist(StorageLevel.MEMORY_ONLY());
+        initData = initData.join(yearsList, initData.col(strDt).startsWith(yearsList.col(strYear)));
+        setDataForYear();
+        yearData.persist(StorageLevel.MEMORY_ONLY());
+        setDataForDecade();
+        decadeData.persist(StorageLevel.MEMORY_ONLY());
+        setDataForCentury();
+        return getFinalData();
     }
 
-//    protected void setInitColumns(String... initColNames) {
-//        initColumns = new ArraySeq<>(initColNames.length);
-//        for(int i = 0; i < initColNames.length; i++) {
-//            initColumns.update(i, new Column(initColNames[i]));
-//        }
-//    }
+    abstract protected void setColumnNames();
+
+    abstract protected void setSeqColumns();
+
+    abstract protected void setInitData(Dataset<Row> data);
+
+    private void setYearsList() {
+        yearsList =
+                initData.map(
+                        (MapFunction<Row, Tuple3<String, String, String>>)
+                                row -> {
+                                    String year = row.getString(0).split("-")[0];
+                                    String yearOfTen = year.substring(0, 3);
+                                    String century = year.substring(0, 2);
+                                    return new Tuple3(year, yearOfTen, century);
+                                }, Encoders.tuple(Encoders.STRING(), Encoders.STRING(), Encoders.STRING()))
+                        .toDF(strYear, strDecade, strCentury)
+                        .dropDuplicates(strYear);
+    }
+
+    abstract protected void setDataForYear();
+
+    abstract protected void setDataForDecade();
+
+    abstract protected void setDataForCentury();
+
+    abstract protected Dataset<Row> getFinalData();
+
 }

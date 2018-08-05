@@ -1,13 +1,10 @@
 package goncharov.hkbTest.test;
 
-import goncharov.hkbTest.handler.CityTempHandler;
-import goncharov.hkbTest.handler.GlobalTempHandler;
+import goncharov.hkbTest.handler.CityTemperHandler;
 import goncharov.hkbTest.handler.SchemaHandler;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.types.DataTypes;
-import scala.Int;
 import scala.collection.mutable.ArraySeq;
 
 import java.util.*;
@@ -51,8 +48,8 @@ public class Test {
         String s = "";
 
         Dataset<Row> cityData = sparkSession.read().csv("C:/Users/VLAD/Desktop/HCB/GlobalLandTemperaturesByCity.csv");
-        CityTempHandler handler = new CityTempHandler(cityData.sqlContext());
-        handler.process(cityData);
+        CityTemperHandler handler = new CityTemperHandler(cityData);
+        handler.goTest();
 
         System.out.println((float) (System.currentTimeMillis() - t1)/1000/60);
 
