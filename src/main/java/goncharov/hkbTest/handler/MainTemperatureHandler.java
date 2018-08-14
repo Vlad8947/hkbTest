@@ -1,0 +1,67 @@
+package goncharov.hkbTest.handler;
+
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import scala.collection.mutable.ArraySeq;
+
+public class MainTemperatureHandler {
+
+    private CityTemperatureHandler cityHandler;
+    private CountryTemperatureHandler countryHandler;
+    private GlobalTemperatureHandler globalHandler;
+    private Dataset<Row> finalData;
+    private ArraySeq<String> countryCol, globalCol;
+
+    public MainTemperatureHandler(Dataset<Row> cityData, Dataset<Row> countryData, Dataset<Row> globalData) {
+        setHandlers(cityData, countryData, globalData);
+        setCol();
+    }
+
+    private void setHandlers(Dataset<Row> cityData, Dataset<Row> countryData, Dataset<Row> globalData) {
+        cityHandler = new CityTemperatureHandler(cityData);
+        countryHandler = new CountryTemperatureHandler(countryData);
+        globalHandler = new GlobalTemperatureHandler(globalData);
+    }
+
+    private void setCol() {
+        countryCol = new ArraySeq<>(2);
+        countryCol.update(0, DataHandler.strYear);
+        countryCol.update(1, DataHandler.strCountry);
+
+        globalCol = new ArraySeq<>(1);
+        globalCol.update(0, DataHandler.strYear);
+    }
+
+    public Dataset<Row> handleAndGetFinalData() {
+        Dataset<Row> cityData = cityHandler.handleAndGetFinalData();
+        Dataset<Row> countryData = countryHandler.handleAndGetFinalData();
+        Dataset<Row> globalData = globalHandler.handleAndGetFinalData();
+
+        finalData =
+                cityData.join(countryData, countryCol)
+                        .join(globalData, globalCol);
+        return finalData;
+    }
+
+    public Dataset<Row> goTest() {
+        cityHandler.setInitData(
+                cityHandler.getInitData()
+                        .filter(
+                                cityHandler.getInitData()
+                                        .col(DataHandler.strCity)
+                                        .like("Antwerp")
+                        )
+        );
+        countryHandler.initData =
+                countryHandler.initData.filter(
+                        countryHandler.initData.col(DataHandler.strCountry)
+                                .like(cityHandler.initData.first().getAs(DataHandler.strCountry))
+                );
+
+        return handleAndGetFinalData();
+    }
+
+    public Dataset<Row> getFinalData() {
+        return finalData;
+    }
+}
