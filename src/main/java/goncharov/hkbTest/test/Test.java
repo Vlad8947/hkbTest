@@ -65,7 +65,7 @@ public class Test {
 
         MainTemperatureHandler mainHandler = new MainTemperatureHandler(cityData, countryData, globalData);
         Dataset<Row> finalData = mainHandler.handleAndGetFinalData();
-        finalData.sort(DataHandler.strYear).show();
+        finalData.sort(DataHandler.getStrYear()).show();
     }
 
     private static void testGlobal() {
@@ -73,11 +73,11 @@ public class Test {
         GlobalTemperatureHandler handler = new GlobalTemperatureHandler(globalData);
 
         globalData
-                .sort(GlobalTemperatureHandler.strDt)
+                .sort(DataHandler.getStrDt())
                 .show(50);
         handler
                 .handleAndGetFinalData()
-                .sort(GlobalTemperatureHandler.strYear)
+                .sort(DataHandler.getStrDt())
                 .show();
     }
 

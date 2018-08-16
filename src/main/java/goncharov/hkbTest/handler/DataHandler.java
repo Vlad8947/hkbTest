@@ -2,6 +2,7 @@ package goncharov.hkbTest.handler;
 
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple3;
 import scala.collection.Seq;
@@ -18,15 +19,13 @@ public abstract class DataHandler implements Serializable {
             yearsList;
 
     private String[] defaultStrColumnArray;
-
-    public static final String
+    protected static final String
             strCity = "City",
             strCountry = "Country",
             strDt = "dt",
             strYear = "year",
             strDecade = "decade",
             strCentury = "century";
-
     protected String strAverageTemperature;
     // For Year
     protected String
@@ -92,7 +91,7 @@ public abstract class DataHandler implements Serializable {
     protected DataHandler(Dataset<Row> data) {
         setColumnNames();
         defaultStrColumnArray = getDefaultStrColumnArray();
-        initializationInitData(data);
+        setInitData(data);
         initData.persist(StorageLevel.MEMORY_ONLY());
     }
 
@@ -223,19 +222,83 @@ public abstract class DataHandler implements Serializable {
         return finalData;
     }
 
-    public void setInitData(Dataset<Row> initData) {
-        this.initData = initData;
+    private void setInitData(Dataset<Row> data) {
+        initData = data
+                .withColumn(strAverageTemperature,
+                        data.col(strAverageTemperature)
+                                .cast(DataTypes.FloatType));
     }
 
     public Dataset<Row> getInitData() {
         return initData;
     }
 
-    abstract protected void initializationInitData(Dataset<Row> data);
-
     abstract protected void setColumnNames();
 
     /** Столбцы конечных данных, которые не зависят от диапазона времени */
     abstract protected String[] getDefaultStrColumnArray();
 
+    public static String getStrCity() {
+        return strCity;
+    }
+
+    public static String getStrCountry() {
+        return strCountry;
+    }
+
+    public static String getStrDt() {
+        return strDt;
+    }
+
+    public static String getStrYear() {
+        return strYear;
+    }
+
+    public static String getStrDecade() {
+        return strDecade;
+    }
+
+    public static String getStrCentury() {
+        return strCentury;
+    }
+
+    public String getStrAverageTemperature() {
+        return strAverageTemperature;
+    }
+
+    public String getStrAverageTemperatureForYear() {
+        return strAverageTemperatureForYear;
+    }
+
+    public String getStrMinTemperatureForYear() {
+        return strMinTemperatureForYear;
+    }
+
+    public String getStrMaxTemperatureForYear() {
+        return strMaxTemperatureForYear;
+    }
+
+    public String getStrAverageTemperatureForDecade() {
+        return strAverageTemperatureForDecade;
+    }
+
+    public String getStrMinTemperatureForDecade() {
+        return strMinTemperatureForDecade;
+    }
+
+    public String getStrMaxTemperatureForDecade() {
+        return strMaxTemperatureForDecade;
+    }
+
+    public String getStrAverageTemperatureForCentury() {
+        return strAverageTemperatureForCentury;
+    }
+
+    public String getStrMinTemperatureForCentury() {
+        return strMinTemperatureForCentury;
+    }
+
+    public String getStrMaxTemperatureForCentury() {
+        return strMaxTemperatureForCentury;
+    }
 }

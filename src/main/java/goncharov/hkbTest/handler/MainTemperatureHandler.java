@@ -43,24 +43,6 @@ public class MainTemperatureHandler {
         return finalData;
     }
 
-    public Dataset<Row> goTest() {
-        cityHandler.setInitData(
-                cityHandler.getInitData()
-                        .filter(
-                                cityHandler.getInitData()
-                                        .col(DataHandler.strCity)
-                                        .like("Antwerp")
-                        )
-        );
-        countryHandler.initData =
-                countryHandler.initData.filter(
-                        countryHandler.initData.col(DataHandler.strCountry)
-                                .like(cityHandler.initData.first().getAs(DataHandler.strCountry))
-                );
-
-        return handleAndGetFinalData();
-    }
-
     public Dataset<Row> getFinalData() {
         return finalData;
     }

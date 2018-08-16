@@ -31,17 +31,6 @@ public class CountryTemperatureHandler extends DataHandler {
     }
 
     @Override
-    protected void initializationInitData(Dataset<Row> data) {
-        initData =
-                data.filter(data.col(strAverageTemperature).isNotNull())
-                        .select(
-                                data.col(strDt),
-                                data.col(strCountry),
-                                data.col(strAverageTemperature).cast(DataTypes.FloatType)
-                        );
-    }
-
-    @Override
     protected String[] getDefaultStrColumnArray() {
         return new String[]{strCountry};
     }
