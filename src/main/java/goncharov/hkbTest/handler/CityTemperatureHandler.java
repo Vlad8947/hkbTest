@@ -1,11 +1,8 @@
 package goncharov.hkbTest.handler;
 
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.types.DataTypes;
-import scala.collection.Seq;
-import scala.collection.mutable.ArraySeq;
 
-public class CityTemperatureHandler extends DataHandler {
+public class CityTemperatureHandler extends TemperatureHandler {
 
 
     public CityTemperatureHandler(Dataset<Row> data) {

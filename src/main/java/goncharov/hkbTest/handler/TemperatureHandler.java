@@ -11,7 +11,7 @@ import scala.collection.mutable.ArraySeq;
 import java.io.Serializable;
 import java.util.Arrays;
 
-public abstract class DataHandler implements Serializable {
+public abstract class TemperatureHandler implements Serializable {
 
     protected Dataset<Row>
             initData,
@@ -88,7 +88,7 @@ public abstract class DataHandler implements Serializable {
         }
     }
 
-    protected DataHandler(Dataset<Row> data) {
+    protected TemperatureHandler(Dataset<Row> data) {
         setColumnNames();
         defaultStrColumnArray = getDefaultStrColumnArray();
         setInitData(data);
@@ -99,7 +99,6 @@ public abstract class DataHandler implements Serializable {
         setYearsList();
         yearsList.persist(StorageLevel.MEMORY_ONLY());
         initData = initData.join(yearsList, initData.col(strDt).startsWith(yearsList.col(strYear)));
-
         SpanColumns decadeColumns = new SpanColumns(SpanEnum.DECADE);
         SpanColumns centuryColumns = new SpanColumns(SpanEnum.CENTURY);
         Dataset<Row> yearData = getDataFor(new SpanColumns(SpanEnum.YEAR), initData);
@@ -107,13 +106,11 @@ public abstract class DataHandler implements Serializable {
         Dataset<Row> decadeData = getDataFor(decadeColumns, yearData);
         decadeData.persist(StorageLevel.MEMORY_ONLY());
         Dataset<Row> centuryData = getDataFor(centuryColumns, decadeData);
-
         finalData = yearData
                 .join(decadeData.drop(strCentury),
                         toSeq(decadeColumns.columnGroup))
                 .join(centuryData,
                         toSeq(centuryColumns.columnGroup));
-
         dropColsInFinalData();
         return finalData;
     }
@@ -144,9 +141,7 @@ public abstract class DataHandler implements Serializable {
                 inputData
                         .groupBy(
                         toSeq(inputData, columnGroup));
-
         Dataset<Row> avTempData, minTempData, maxTempData;
-
         avTempData =
                 group.mean(spanColumns.strInitTemp)
                         .toDF(
@@ -162,7 +157,6 @@ public abstract class DataHandler implements Serializable {
                         .toDF(
                                 toSeq(columnGroup, spanColumns.strMaxAvTempForSpan)
                         );
-
         return combineSpans(avTempData, minTempData, maxTempData, columnGroup, span);
     }
 

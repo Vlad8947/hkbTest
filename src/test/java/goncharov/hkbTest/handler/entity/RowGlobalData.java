@@ -1,15 +1,12 @@
-package goncharov.hkbTest.handler;
+package goncharov.hkbTest.handler.entity;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.Serializable;
 
-public class GlobalRow {
+public class RowGlobalData implements RowDataInterface, Serializable {
 
     private String dt,LandAverageTemperature,LandAverageTemperatureUncertainty,LandMaxTemperature,LandMaxTemperatureUncertainty,LandMinTemperature,LandMinTemperatureUncertainty,LandAndOceanAverageTemperature,LandAndOceanAverageTemperatureUncertainty;
 
-    public GlobalRow(String dt) {
+    public RowGlobalData(String dt) {
         this.dt = dt;
     }
 
@@ -17,8 +14,14 @@ public class GlobalRow {
         LandAverageTemperature = landAverageTemperature;
     }
 
+    @Override
     public String getDt() {
         return dt;
+    }
+
+    @Override
+    public String getAverageTemper() {
+        return getLandAverageTemperature();
     }
 
     public String getLandAverageTemperature() {

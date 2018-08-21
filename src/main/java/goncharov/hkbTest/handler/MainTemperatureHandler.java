@@ -25,11 +25,11 @@ public class MainTemperatureHandler {
 
     private void setCol() {
         countryCol = new ArraySeq<>(2);
-        countryCol.update(0, DataHandler.strYear);
-        countryCol.update(1, DataHandler.strCountry);
+        countryCol.update(0, TemperatureHandler.strYear);
+        countryCol.update(1, TemperatureHandler.strCountry);
 
         globalCol = new ArraySeq<>(1);
-        globalCol.update(0, DataHandler.strYear);
+        globalCol.update(0, TemperatureHandler.strYear);
     }
 
     public Dataset<Row> handleAndGetFinalData() {

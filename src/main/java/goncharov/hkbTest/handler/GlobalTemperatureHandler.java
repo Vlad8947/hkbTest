@@ -1,12 +1,9 @@
 package goncharov.hkbTest.handler;
 
 import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.RelationalGroupedDataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.types.DataTypes;
-import scala.collection.mutable.ArraySeq;
 
-public class GlobalTemperatureHandler extends DataHandler {
+public class GlobalTemperatureHandler extends TemperatureHandler {
 
     public GlobalTemperatureHandler(Dataset<Row> data) {
         super(data);

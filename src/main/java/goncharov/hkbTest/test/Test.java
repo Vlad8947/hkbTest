@@ -1,16 +1,12 @@
 package goncharov.hkbTest.test;
 
 import goncharov.hkbTest.handler.*;
-import org.apache.commons.collections.functors.FactoryTransformer;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
-import scala.collection.generic.SeqFactory;
 import scala.collection.mutable.ArraySeq;
-import scala.collection.parallel.ParIterableLike;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Test {
 
@@ -65,7 +61,7 @@ public class Test {
 
         MainTemperatureHandler mainHandler = new MainTemperatureHandler(cityData, countryData, globalData);
         Dataset<Row> finalData = mainHandler.handleAndGetFinalData();
-        finalData.sort(DataHandler.getStrYear()).show();
+        finalData.sort(TemperatureHandler.getStrYear()).show();
     }
 
     private static void testGlobal() {
@@ -73,11 +69,11 @@ public class Test {
         GlobalTemperatureHandler handler = new GlobalTemperatureHandler(globalData);
 
         globalData
-                .sort(DataHandler.getStrDt())
+                .sort(TemperatureHandler.getStrDt())
                 .show(50);
         handler
                 .handleAndGetFinalData()
-                .sort(DataHandler.getStrDt())
+                .sort(TemperatureHandler.getStrDt())
                 .show();
     }
 
