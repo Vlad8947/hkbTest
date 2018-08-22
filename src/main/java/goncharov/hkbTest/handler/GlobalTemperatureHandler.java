@@ -31,9 +31,4 @@ public class GlobalTemperatureHandler extends TemperatureHandler {
         return new String[0];
     }
 
-    public void goTest() {
-        handleAndGetFinalData().sort(strYear).show();
-    }
-
-
 }

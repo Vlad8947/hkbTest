@@ -7,7 +7,6 @@ public class CountryTemperatureHandler extends TemperatureHandler {
 
     public CountryTemperatureHandler(Dataset<Row> data) {
         super(data);
-
     }
 
     @Override
@@ -36,10 +35,7 @@ public class CountryTemperatureHandler extends TemperatureHandler {
         initData = initData.filter(initData.col(strCountry).like(
                 initData.first().<String>getAs(strCountry)
         ));
-
         initData.sort(strDt).show();
-
         handleAndGetFinalData().sort(strYear).show();
-
     }
 }

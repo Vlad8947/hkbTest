@@ -36,7 +36,6 @@ public class MainTemperatureHandler {
         Dataset<Row> cityData = cityHandler.handleAndGetFinalData();
         Dataset<Row> countryData = countryHandler.handleAndGetFinalData();
         Dataset<Row> globalData = globalHandler.handleAndGetFinalData();
-
         finalData =
                 cityData.join(countryData, countryCol)
                         .join(globalData, globalCol);

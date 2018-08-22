@@ -36,7 +36,7 @@ public class Test {
         try {
             long t1 = System.currentTimeMillis();
 
-            testGlobal();
+            test();
 
             System.out.println((float) (System.currentTimeMillis() - t1)/1000/60);
         } catch (Exception ex) {
@@ -45,6 +45,19 @@ public class Test {
 
         sparkSession.close();
         sparkContext.close();
+    }
+
+    private static void test() {
+        Dataset<Row> cityData, countryData, globalData;
+        cityData = sparkSession.read().option("header", true).csv(cityPath);
+        countryData = sparkSession.read().option("header", true).csv(countryPath);
+        globalData = sparkSession.read().option("header", true).csv(globalPath);
+
+        cityData.show(2);
+
+        for(String column: cityData.schema().fieldNames()) {
+            System.out.println(column + ", ");
+        }
     }
 
     private static void readTest() {

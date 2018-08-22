@@ -86,11 +86,13 @@ public class TemperatureData implements Serializable {
         return this;
     }
 
-    public void setCity(String city) {
+    public TemperatureData setCity(String city) {
         this.city = city;
+        return this;
     }
 
-    public void setCountry(String country) {
+    public TemperatureData setCountry(String country) {
         this.country = country;
+        return this;
     }
 }

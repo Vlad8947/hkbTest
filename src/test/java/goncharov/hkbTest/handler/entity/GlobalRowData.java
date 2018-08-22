@@ -2,16 +2,25 @@ package goncharov.hkbTest.handler.entity;
 
 import java.io.Serializable;
 
-public class RowGlobalData implements RowDataInterface, Serializable {
+public class GlobalRowData implements RowDataInterface {
 
-    private String dt,LandAverageTemperature,LandAverageTemperatureUncertainty,LandMaxTemperature,LandMaxTemperatureUncertainty,LandMinTemperature,LandMinTemperatureUncertainty,LandAndOceanAverageTemperature,LandAndOceanAverageTemperatureUncertainty;
+    private String dt,
+            LandAverageTemperature,
+            LandAverageTemperatureUncertainty,
+            LandMaxTemperature,
+            LandMaxTemperatureUncertainty,
+            LandMinTemperature,
+            LandMinTemperatureUncertainty,
+            LandAndOceanAverageTemperature,
+            LandAndOceanAverageTemperatureUncertainty;
 
-    public RowGlobalData(String dt) {
+    public GlobalRowData(String dt) {
         this.dt = dt;
     }
 
-    public void setLandAverageTemperature(String landAverageTemperature) {
-        LandAverageTemperature = landAverageTemperature;
+    public GlobalRowData(String dt, String averageTemperature) {
+        this.dt = dt;
+        LandAverageTemperature = averageTemperature;
     }
 
     @Override
@@ -20,7 +29,7 @@ public class RowGlobalData implements RowDataInterface, Serializable {
     }
 
     @Override
-    public String getAverageTemper() {
+    public String getAverageTemperature() {
         return getLandAverageTemperature();
     }
 

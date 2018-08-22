@@ -2,17 +2,15 @@ package goncharov.hkbTest.handler;
 
 import com.holdenkarau.spark.testing.JavaDatasetSuiteBase;
 import goncharov.hkbTest.handler.entity.RowDataInterface;
-import goncharov.hkbTest.handler.entity.RowGlobalData;
 import goncharov.hkbTest.handler.entity.TemperatureData;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,6 +18,7 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
 
     private static NumberFormat numberFormat = NumberFormat.getNumberInstance();
     private TemperatureHandler handler;
+    private Dataset<Row> finalData;
     protected List<RowDataInterface> rowDataList;
 
     private List<TemperatureData> yearTemperDataList = new LinkedList<>();
@@ -38,14 +37,47 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         rowDataList = getRowDataList();
         handler = getHandler();
         setTemperLists();
+        finalData = handler.handleAndGetFinalData();
+    }
+
+    @After
+    public void after() {
+        finalData = null;
+    }
+
+    @Test
+    public void allColumnsTest() {
+        List<String> expectedSchema = Arrays.asList(
+                finalData.schema().fieldNames());
+        for (String column: getActualSchema()) {
+            Assert.assertTrue(
+                    ("Contains_" + column),
+                    expectedSchema.contains(column));
+        }
     }
 
     @Test
     public void temperatureCalculationTest() {
-        Dataset<Row> finalData = handler.handleAndGetFinalData();
-        finalData.foreach(row -> {
-            spanTemperatureTests(row);
-        });
+        finalData.foreach(row -> spanTemperatureTests(row));
+    }
+
+    private List<String> getActualSchema(){
+        List<String> schema = new ArrayList<>(Arrays.asList(
+                TemperatureHandler.strYear,
+                handler.strAverageTemperatureForYear,
+                handler.strMinTemperatureForYear,
+                handler.strMaxTemperatureForYear,
+
+                handler.strAverageTemperatureForDecade,
+                handler.strMinTemperatureForDecade,
+                handler.strMaxTemperatureForDecade,
+
+                handler.strAverageTemperatureForCentury,
+                handler.strMinTemperatureForCentury,
+                handler.strMinTemperatureForCentury
+        ));
+        schema.addAll(getSpanSchema());
+        return schema;
     }
 
     private void spanTemperatureTests(Row row) {
@@ -54,27 +86,15 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         centuryTemperatureTest(row);
     }
 
-    protected List<RowDataInterface> getRowDataList() {
-        List<RowDataInterface> rowDataList = new ArrayList<>();
-        for (String[] strRow: getStrRowDataArray()) {
-            RowGlobalData row = new RowGlobalData(strRow[0]);
-            if (strRow.length > 1)
-                row.setLandAverageTemperature(strRow[1]);
-            rowDataList.add(row);
-        }
-        return rowDataList;
-    }
-
     private void setTemperLists() {
         for (RowDataInterface rowData : rowDataList) {
-            if (rowData.getAverageTemper() != null) {
+            if (rowData.getAverageTemperature() != null) {
                 String year = rowData.getDt().split("-")[0];
                 put(
                         yearTemperDataList,
-                        getDefaultData()
-                                .setSpan(year)
+                        getTemperatureData(rowData, year)
                                 .addTemperature(new Float(
-                                        rowData.getAverageTemper())
+                                        rowData.getAverageTemperature())
                                 )
                 );
             }
@@ -122,9 +142,9 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         String expectedMinTemper = getFormatTemperFromRow(row, strMinTemper);
         String expectedMaxTemper = getFormatTemperFromRow(row, strMaxTemper);
         TemperatureData temperData =
-                getTemperatureData(temperDataList,
-                        new TemperatureData(getDefaultData(), span)
-                );
+                getTemperatureData(
+                        temperDataList,
+                        getTemperatureData(row, span));
         String actualAvTemper = numberFormat.format(temperData.getAvTemp());
         String actualMinTemper = numberFormat.format(temperData.getMinTemp());
         String actualMaxTemper = numberFormat.format(temperData.getMaxTemp());
@@ -171,7 +191,13 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
 
     abstract protected TemperatureData getTemperatureData(List<TemperatureData> tempDataList,
                                                           TemperatureData dataProperties);
-    abstract protected String[][] getStrRowDataArray();
 
-    abstract protected TemperatureData getDefaultData();
+    abstract protected List<RowDataInterface> getRowDataList();
+
+    abstract protected TemperatureData getTemperatureData(Row row, String span);
+
+    abstract protected TemperatureData getTemperatureData(RowDataInterface rowData, String span);
+
+    abstract protected List<String> getSpanSchema();
+
 }

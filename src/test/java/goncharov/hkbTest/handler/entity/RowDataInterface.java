@@ -1,6 +1,8 @@
 package goncharov.hkbTest.handler.entity;
 
-public interface RowDataInterface {
+import java.io.Serializable;
+
+public interface RowDataInterface extends Serializable {
     String getDt ();
-    String getAverageTemper();
+    String getAverageTemperature();
 }
