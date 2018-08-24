@@ -1,9 +1,5 @@
 package goncharov.hkbTest.handler;
 
-import goncharov.hkbTest.handler.entity.CityRowData;
-import goncharov.hkbTest.handler.entity.CountryRowData;
-import goncharov.hkbTest.handler.entity.RowDataInterface;
-import goncharov.hkbTest.handler.entity.TemperatureData;
 import org.apache.spark.sql.Row;
 
 import java.util.ArrayList;
@@ -11,14 +7,67 @@ import java.util.List;
 
 public class CityTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
 
+    public class CityRowData implements RowDataInterface {
+        private String dt,
+                AverageTemperature,
+                AverageTemperatureUncertainty,
+                City,
+                Country,
+                Latitude,
+                Longitude;
+
+        public CityRowData(String dt, String city, String country) {
+            this.dt = dt;
+            City = city;
+            Country = country;
+        }
+
+        public CityRowData(String dt, String city, String country, String averageTemperature) {
+            this.dt = dt;
+            AverageTemperature = averageTemperature;
+            City = city;
+            Country = country;
+        }
+
+        @Override
+        public String getDt() {
+            return dt;
+        }
+
+        @Override
+        public String getAverageTemperature() {
+            return AverageTemperature;
+        }
+
+        public String getAverageTemperatureUncertainty() {
+            return AverageTemperatureUncertainty;
+        }
+
+        public String getCity() {
+            return City;
+        }
+
+        public String getCountry() {
+            return Country;
+        }
+
+        public String getLatitude() {
+            return Latitude;
+        }
+
+        public String getLongitude() {
+            return Longitude;
+        }
+    }
+
     @Override
     protected TemperatureData getTemperatureData(Row row, String span) {
         return new TemperatureData()
                 .setSpan(span)
                 .setCountry(
-                        row.getAs(TemperatureHandler.strCountry))
+                        row.getAs(AbstractTemperatureHandler.strCountry))
                 .setCity(
-                        row.getAs(TemperatureHandler.strCity));
+                        row.getAs(AbstractTemperatureHandler.strCity));
     }
 
     @Override
@@ -34,13 +83,6 @@ public class CityTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
     }
 
     @Override
-    protected TemperatureHandler getHandler() {
-        return new CityTemperatureHandler(
-                sqlContext().createDataFrame(rowDataList, CityRowData.class)
-        );
-    }
-
-    @Override
     protected TemperatureData getTemperatureData(List<TemperatureData> tempDataList, TemperatureData dataProperties) {
         String span = dataProperties.getSpan();
         String country = dataProperties.getCountry();
@@ -53,6 +95,13 @@ public class CityTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
             }
         }
         return null;
+    }
+
+    @Override
+    protected AbstractTemperatureHandler getHandler(List<RowDataInterface> rowDataList) {
+        return new CityTemperatureHandler(
+                sqlContext().createDataFrame(rowDataList, CityRowData.class)
+        );
     }
 
     @Override
@@ -107,8 +156,8 @@ public class CityTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
     @Override
     protected List<String> getSpanSchema() {
         List<String> schema = new ArrayList<>();
-        schema.add(TemperatureHandler.strCountry);
-        schema.add(TemperatureHandler.strCity);
+        schema.add(AbstractTemperatureHandler.strCountry);
+        schema.add(AbstractTemperatureHandler.strCity);
         return schema;
     }
 }

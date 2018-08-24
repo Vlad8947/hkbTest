@@ -3,7 +3,7 @@ package goncharov.hkbTest.handler;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-public class CountryTemperatureHandler extends TemperatureHandler {
+public class CountryTemperatureHandler extends AbstractTemperatureHandler {
 
     public CountryTemperatureHandler(Dataset<Row> data) {
         super(data);
@@ -31,11 +31,4 @@ public class CountryTemperatureHandler extends TemperatureHandler {
         return new String[]{strCountry};
     }
 
-    public void goTest() {
-        initData = initData.filter(initData.col(strCountry).like(
-                initData.first().<String>getAs(strCountry)
-        ));
-        initData.sort(strDt).show();
-        handleAndGetFinalData().sort(strYear).show();
-    }
 }

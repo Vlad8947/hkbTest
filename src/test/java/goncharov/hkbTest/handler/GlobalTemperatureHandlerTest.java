@@ -1,13 +1,73 @@
 package goncharov.hkbTest.handler;
 
-import goncharov.hkbTest.handler.entity.RowDataInterface;
-import goncharov.hkbTest.handler.entity.GlobalRowData;
-import goncharov.hkbTest.handler.entity.TemperatureData;
 import org.apache.spark.sql.Row;
 
 import java.util.*;
 
 public class GlobalTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
+
+    public class GlobalRowData implements RowDataInterface {
+        private String dt,
+                LandAverageTemperature,
+                LandAverageTemperatureUncertainty,
+                LandMaxTemperature,
+                LandMaxTemperatureUncertainty,
+                LandMinTemperature,
+                LandMinTemperatureUncertainty,
+                LandAndOceanAverageTemperature,
+                LandAndOceanAverageTemperatureUncertainty;
+
+        public GlobalRowData(String dt) {
+            this.dt = dt;
+        }
+
+        public GlobalRowData(String dt, String averageTemperature) {
+            this.dt = dt;
+            LandAverageTemperature = averageTemperature;
+        }
+
+        @Override
+        public String getDt() {
+            return dt;
+        }
+
+        @Override
+        public String getAverageTemperature() {
+            return getLandAverageTemperature();
+        }
+
+        public String getLandAverageTemperature() {
+            return LandAverageTemperature;
+        }
+
+        public String getLandAverageTemperatureUncertainty() {
+            return LandAverageTemperatureUncertainty;
+        }
+
+        public String getLandMaxTemperature() {
+            return LandMaxTemperature;
+        }
+
+        public String getLandMaxTemperatureUncertainty() {
+            return LandMaxTemperatureUncertainty;
+        }
+
+        public String getLandMinTemperature() {
+            return LandMinTemperature;
+        }
+
+        public String getLandMinTemperatureUncertainty() {
+            return LandMinTemperatureUncertainty;
+        }
+
+        public String getLandAndOceanAverageTemperature() {
+            return LandAndOceanAverageTemperature;
+        }
+
+        public String getLandAndOceanAverageTemperatureUncertainty() {
+            return LandAndOceanAverageTemperatureUncertainty;
+        }
+    }
 
     @Override
     protected TemperatureData getTemperatureData(Row row, String span) {
@@ -20,13 +80,6 @@ public class GlobalTemperatureHandlerTest extends AbstractTemperatureHandlerTest
     }
 
     @Override
-    protected TemperatureHandler getHandler() {
-        return new GlobalTemperatureHandler(
-                sqlContext().createDataFrame(rowDataList, GlobalRowData.class)
-        );
-    }
-
-    @Override
     protected TemperatureData getTemperatureData(List<TemperatureData> tempDataList, TemperatureData dataProperties) {
         String span = dataProperties.getSpan();
         for(TemperatureData tempTemperatureDate: tempDataList) {
@@ -35,6 +88,13 @@ public class GlobalTemperatureHandlerTest extends AbstractTemperatureHandlerTest
             }
         }
         return null;
+    }
+
+    @Override
+    protected AbstractTemperatureHandler getHandler(List<RowDataInterface> rowDataList) {
+        return new GlobalTemperatureHandler(
+                sqlContext().createDataFrame(rowDataList, GlobalRowData.class)
+        );
     }
 
     @Override

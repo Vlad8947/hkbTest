@@ -1,10 +1,5 @@
 package goncharov.hkbTest.handler;
 
-import goncharov.hkbTest.handler.entity.CountryRowData;
-import goncharov.hkbTest.handler.entity.RowDataInterface;
-import goncharov.hkbTest.handler.entity.GlobalRowData;
-import goncharov.hkbTest.handler.entity.TemperatureData;
-import org.apache.avro.generic.GenericData;
 import org.apache.spark.sql.Row;
 
 import java.util.ArrayList;
@@ -12,12 +7,48 @@ import java.util.List;
 
 public class CountryTemperatureHandlerTest extends AbstractTemperatureHandlerTest {
 
-    @Override
+    public class CountryRowData implements RowDataInterface {
+        private String dt,
+                AverageTemperature,
+                AverageTemperatureUncertainty,
+                Country;
+
+        public CountryRowData(String dt, String country) {
+            this.dt = dt;
+            Country = country;
+        }
+
+        public CountryRowData(String dt, String country, String averageTemperature) {
+            this.dt = dt;
+            AverageTemperature = averageTemperature;
+            Country = country;
+        }
+
+        @Override
+        public String getDt() {
+            return dt;
+        }
+
+        @Override
+        public String getAverageTemperature() {
+            return AverageTemperature;
+        }
+
+        public String getAverageTemperatureUncertainty() {
+            return AverageTemperatureUncertainty;
+        }
+
+        public String getCountry() {
+            return Country;
+        }
+    }
+
+   @Override
     protected TemperatureData getTemperatureData(Row row, String span) {
         return new TemperatureData()
                 .setSpan(span)
                 .setCountry(
-                        row.getAs(TemperatureHandler.strCountry));
+                        row.getAs(AbstractTemperatureHandler.strCountry));
     }
 
     @Override
@@ -27,13 +58,6 @@ public class CountryTemperatureHandlerTest extends AbstractTemperatureHandlerTes
                 .setSpan(span)
                 .setCountry(
                         countryRowData.getCountry());
-    }
-
-    @Override
-    protected TemperatureHandler getHandler() {
-        return new CountryTemperatureHandler(
-                sqlContext().createDataFrame(rowDataList, CountryRowData.class)
-        );
     }
 
     @Override
@@ -47,6 +71,13 @@ public class CountryTemperatureHandlerTest extends AbstractTemperatureHandlerTes
             }
         }
         return null;
+    }
+
+    @Override
+    protected AbstractTemperatureHandler getHandler(List<RowDataInterface> rowDataList) {
+        return new CountryTemperatureHandler(
+                sqlContext().createDataFrame(rowDataList, CountryRowData.class)
+        );
     }
 
     @Override
@@ -81,7 +112,7 @@ public class CountryTemperatureHandlerTest extends AbstractTemperatureHandlerTes
     @Override
     protected List<String> getSpanSchema() {
         List<String> schema = new ArrayList<>();
-        schema.add(TemperatureHandler.strCountry);
+        schema.add(AbstractTemperatureHandler.strCountry);
         return schema;
     }
 }

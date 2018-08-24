@@ -2,7 +2,7 @@ package goncharov.hkbTest.handler;
 
 import org.apache.spark.sql.*;
 
-public class CityTemperatureHandler extends TemperatureHandler {
+public class CityTemperatureHandler extends AbstractTemperatureHandler {
 
 
     public CityTemperatureHandler(Dataset<Row> data) {
@@ -31,20 +31,6 @@ public class CityTemperatureHandler extends TemperatureHandler {
         return new String[]{
                 strCity, strCountry
         };
-    }
-
-    public void goTest() {
-        initData =
-                initData.filter(initData.col(strCity).like("Antwerp"));
-
-//        initData.show();
-
-        handleAndGetFinalData()
-                .sort(strCity, strYear)
-                .show()
-        ;
-        System.out.println(finalData.first().toString());
-        System.out.println(finalData.head().toString());
     }
 
 }

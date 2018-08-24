@@ -3,7 +3,7 @@ package goncharov.hkbTest.handler;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-public class GlobalTemperatureHandler extends TemperatureHandler {
+public class GlobalTemperatureHandler extends AbstractTemperatureHandler {
 
     public GlobalTemperatureHandler(Dataset<Row> data) {
         super(data);
