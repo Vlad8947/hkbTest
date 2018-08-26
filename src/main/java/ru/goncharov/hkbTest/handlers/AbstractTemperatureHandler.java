@@ -1,23 +1,31 @@
-package goncharov.hkbTest.handler;
+package ru.goncharov.hkbTest.handlers;
 
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.storage.StorageLevel;
+import ru.goncharov.hkbTest.handlers.span_columns_for_handle.AbstractSpanColumnsForHandle;
+import ru.goncharov.hkbTest.handlers.span_columns_for_handle.CenturyColumnsForHandle;
+import ru.goncharov.hkbTest.handlers.span_columns_for_handle.DecadeColumnsForHandle;
+import ru.goncharov.hkbTest.handlers.span_columns_for_handle.YearColumnsForHandle;
 import scala.Tuple3;
 import scala.collection.Seq;
 import scala.collection.mutable.ArraySeq;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
+/**
+ *  Абстрактный класс для обработчиков данных по ареалам.
+ *  Обобщает логику обработки, за исключением индивидуальных параметров.
+ *  Параметры с приставкой str являются именами колонн входных и выходных данных.
+ *  Метод запуска обработки handleAndGetFinalData().
+ */
 public abstract class AbstractTemperatureHandler implements Serializable {
 
     private Dataset<Row>
-            initData,
-            finalData,
-            yearsList;
-    private String[] defaultStrColumnArray;
+            initData,       // входные данные
+            finalData,      // выходные данные
+            yearsListData;      // перечисление всех используемых лет с информацией о десятилетии и веке данного года
     protected static final String
             strCity = "City",
             strCountry = "Country",
@@ -26,6 +34,7 @@ public abstract class AbstractTemperatureHandler implements Serializable {
             strDecade = "decade",
             strCentury = "century";
     protected String strAverageTemperature;
+
     // For Year
     protected String
             strAverageTemperatureForYear,
@@ -42,79 +51,50 @@ public abstract class AbstractTemperatureHandler implements Serializable {
             strMinTemperatureForCentury,
             strMaxTemperatureForCentury;
 
-    protected enum SpanEnum {
-        YEAR, DECADE, CENTURY
-    }
-
-    private class SpanColumns {
-
-        private String[] columnGroup;
-        private SpanEnum span;
-        private String strInitTemp,
-                strAvTempForSpan,
-                strMinAvTempForSpan,
-                strMaxAvTempForSpan;
-
-        public SpanColumns(SpanEnum span){
-            this.span = span;
-            columnGroup = Arrays.copyOf(defaultStrColumnArray, defaultStrColumnArray.length + 1);
-            switch(span) {
-                case YEAR:
-                    columnGroup[columnGroup.length - 1] = strYear;
-                    strInitTemp = strAverageTemperature;
-                    strAvTempForSpan = strAverageTemperatureForYear;
-                    strMinAvTempForSpan = strMinTemperatureForYear;
-                    strMaxAvTempForSpan = strMaxTemperatureForYear;
-                    break;
-
-                case DECADE:
-                    columnGroup[columnGroup.length - 1] = strDecade;
-                    strInitTemp = strAverageTemperatureForYear;
-                    strAvTempForSpan = strAverageTemperatureForDecade;
-                    strMinAvTempForSpan = strMinTemperatureForDecade;
-                    strMaxAvTempForSpan = strMaxTemperatureForDecade;
-                    break;
-
-                case CENTURY:
-                    columnGroup[columnGroup.length - 1] = strCentury;
-                    strInitTemp = strAverageTemperatureForDecade;
-                    strAvTempForSpan = strAverageTemperatureForCentury;
-                    strMinAvTempForSpan = strMinTemperatureForCentury;
-                    strMaxAvTempForSpan = strMaxTemperatureForCentury;
-                    break;
-            }
-        }
-    }
-
     AbstractTemperatureHandler(Dataset<Row> data) {
         setColumnNames();
-        defaultStrColumnArray = getDefaultStrColumnArray();
         setInitData(data);
         initData.persist(StorageLevel.MEMORY_ONLY());
     }
 
+    /** Метод производит обработку данных и возврат результата */
     public Dataset<Row> handleAndGetFinalData() {
+        // подготовка списка изспользуемых лет и его внедрение в исходные данные
         setYearsList();
-        yearsList.persist(StorageLevel.MEMORY_ONLY());
-        initData = initData.join(yearsList, initData.col(strDt).startsWith(yearsList.col(strYear)));
-        SpanColumns decadeColumns = new SpanColumns(SpanEnum.DECADE);
-        SpanColumns centuryColumns = new SpanColumns(SpanEnum.CENTURY);
-        Dataset<Row> yearData = getDataFor(new SpanColumns(SpanEnum.YEAR), initData);
+        yearsListData.persist(StorageLevel.MEMORY_ONLY());
+        initData =
+                initData.join(
+                        yearsListData,
+                        initData.col(strDt)
+                                .startsWith(yearsListData.col(strYear))
+                );
+
+        // инициализация используемых колонн по диапазонам лет
+        AbstractSpanColumnsForHandle yearColumns = new YearColumnsForHandle(this);
+        AbstractSpanColumnsForHandle decadeColumns = new DecadeColumnsForHandle(this);
+        AbstractSpanColumnsForHandle centuryColumns = new CenturyColumnsForHandle(this);
+
+        // обработка и получение конечных данных по диапазонам
+        Dataset<Row> yearData = getDataFor(yearColumns, initData);
         yearData.persist(StorageLevel.MEMORY_ONLY());
         Dataset<Row> decadeData = getDataFor(decadeColumns, yearData);
         decadeData.persist(StorageLevel.MEMORY_ONLY());
         Dataset<Row> centuryData = getDataFor(centuryColumns, decadeData);
+
+        // объединение конечных данных
         finalData = yearData
                 .join(decadeData.drop(strCentury),
-                        toSeq(decadeColumns.columnGroup))
+                        toSeq(decadeColumns.getColumnGroup()))
                 .join(centuryData,
-                        toSeq(centuryColumns.columnGroup));
+                        toSeq(centuryColumns.getColumnGroup()));
+        // удаление лишних колонок
         dropColsInFinalData();
         return finalData;
     }
 
+    /** Метод инициализации списка лет с информацией о десятилетии и веке */
     private void setYearsList() {
-        yearsList =
+        yearsListData =
                 initData.map(
                         (MapFunction<Row, Tuple3<String, String, String>>)
                                 row -> {
@@ -128,41 +108,44 @@ public abstract class AbstractTemperatureHandler implements Serializable {
                         .dropDuplicates(strYear);
     }
 
+    /** Метод удаления лишних колонок */
     private void dropColsInFinalData() {
         finalData = finalData.drop(strDecade, strCentury);
     }
 
-    private Dataset<Row> getDataFor(SpanColumns spanColumns, Dataset<Row> inputData) {
-        String[] columnGroup = spanColumns.columnGroup;
-        SpanEnum span = spanColumns.span;
+    /** Метод, обрабатывающий данные по диапазонам лет */
+    private Dataset<Row> getDataFor(AbstractSpanColumnsForHandle spanColumns, Dataset<Row> inputData) {
+        String[] columnGroup = spanColumns.getColumnGroup();
+        SpanEnum span = spanColumns.getSpan();
+        // группировка данных по колоннам
         RelationalGroupedDataset group =
-                inputData
-                        .groupBy(
-                        toSeq(inputData, columnGroup));
-        Dataset<Row> avTempData, minTempData, maxTempData;
-        avTempData =
-                group.mean(spanColumns.strInitTemp)
+                inputData.groupBy(
+                                toSeq(inputData, columnGroup));
+        // вычисление значений из созданной группы
+        Dataset<Row> avTempData =
+                group.mean(spanColumns.getStrInitTemp())
                         .toDF(
-                                toSeq(columnGroup, spanColumns.strAvTempForSpan)
+                                toSeq(columnGroup, spanColumns.getStrAvTempForSpan())
                         );
-        minTempData =
-                group.min(spanColumns.strInitTemp)
+        Dataset<Row> minTempData =
+                group.min(spanColumns.getStrInitTemp())
                         .toDF(
-                                toSeq(columnGroup, spanColumns.strMinAvTempForSpan)
+                                toSeq(columnGroup, spanColumns.getStrMinAvTempForSpan())
                         );
-        maxTempData =
-                group.max(spanColumns.strInitTemp)
+        Dataset<Row> maxTempData =
+                group.max(spanColumns.getStrInitTemp())
                         .toDF(
-                                toSeq(columnGroup, spanColumns.strMaxAvTempForSpan)
+                                toSeq(columnGroup, spanColumns.getStrMaxAvTempForSpan())
                         );
-        return combineSpans(avTempData, minTempData, maxTempData, columnGroup, span);
+        return combineInSpan(avTempData, minTempData, maxTempData, columnGroup, span);
     }
 
-    private Dataset<Row> combineSpans(Dataset<Row> avTempData,
-                                        Dataset<Row> minTempData,
-                                        Dataset<Row> maxTempData,
-                                        String[] columnGroup,
-                                        SpanEnum span)
+    /** Метод объединяет данные средних, миним. и макс. значений по диапазам лет */
+    private Dataset<Row> combineInSpan(Dataset<Row> avTempData,
+                                       Dataset<Row> minTempData,
+                                       Dataset<Row> maxTempData,
+                                       String[] columnGroup,
+                                       SpanEnum span)
     {
         Seq<String> joinColumns = toSeq(columnGroup);
         Dataset<Row> endData =
@@ -170,12 +153,12 @@ public abstract class AbstractTemperatureHandler implements Serializable {
                         .join(maxTempData, joinColumns);
         switch (span) {
             case YEAR:
-                endData = endData.join(yearsList, strYear);
+                endData = endData.join(yearsListData, strYear);
                 break;
             case DECADE:
                 endData =
                         endData.join(
-                                yearsList
+                                yearsListData
                                         .select(strDecade, strCentury)
                                         .dropDuplicates(strDecade),
                                 strDecade);
@@ -184,6 +167,7 @@ public abstract class AbstractTemperatureHandler implements Serializable {
         return endData;
     }
 
+    /** Методы перевода ванных в тип Seq */
     public static Seq<String> toSeq(String... columns) {
         ArraySeq<String> arraySeq = new ArraySeq<>(columns.length);
         for (int i = 0; i < columns.length; i++) {
@@ -191,7 +175,6 @@ public abstract class AbstractTemperatureHandler implements Serializable {
         }
         return arraySeq;
     }
-
     private Seq<String> toSeq(String[] columns, String lastColumn) {
         int seqLength = columns.length + 1;
         ArraySeq<String> arraySeq = new ArraySeq<>(seqLength);
@@ -201,7 +184,6 @@ public abstract class AbstractTemperatureHandler implements Serializable {
         arraySeq.update(seqLength - 1, lastColumn);
         return arraySeq;
     }
-
     private Seq<Column> toSeq(Dataset<Row> data, String[] columns) {
         ArraySeq<Column> arraySeq = new ArraySeq<>(columns.length);
         for (int i = 0; i < columns.length; i++) {
@@ -210,6 +192,7 @@ public abstract class AbstractTemperatureHandler implements Serializable {
         return arraySeq;
     }
 
+    /** Метод инициализации начальных данных */
     private void setInitData(Dataset<Row> data) {
         initData = data
                 .withColumn(strAverageTemperature,
@@ -217,10 +200,11 @@ public abstract class AbstractTemperatureHandler implements Serializable {
                                 .cast(DataTypes.FloatType));
     }
 
+    /** Метод инициализации столбцов, отличающихся по ареалам */
     abstract protected void setColumnNames();
 
-    /** Столбцы конечных данных, которые не зависят от диапазона времени */
-    abstract protected String[] getDefaultStrColumnArray();
+    /** Столбцы идентификации ареала */
+    abstract public String[] getDefaultStrColumnArray();
 
     public Dataset<Row> getFinalData() {
         return finalData;

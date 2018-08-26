@@ -1,4 +1,4 @@
-package goncharov.hkbTest.handler;
+package ru.goncharov.hkbTest.handlers;
 
 import org.apache.spark.sql.Row;
 
@@ -98,7 +98,7 @@ public class GlobalTemperatureHandlerTest extends AbstractTemperatureHandlerTest
     }
 
     @Override
-    protected List<String> getSpanSchema() {
+    protected List<String> getAreaIdentificationColumns() {
         return new ArrayList<>();
     }
 

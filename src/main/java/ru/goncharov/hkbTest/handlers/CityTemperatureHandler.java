@@ -1,4 +1,4 @@
-package goncharov.hkbTest.handler;
+package ru.goncharov.hkbTest.handlers;
 
 import org.apache.spark.sql.*;
 
@@ -27,7 +27,7 @@ public class CityTemperatureHandler extends AbstractTemperatureHandler {
     }
 
     @Override
-    protected String[] getDefaultStrColumnArray() {
+    public String[] getDefaultStrColumnArray() {
         return new String[]{
                 strCity, strCountry
         };

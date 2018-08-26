@@ -1,4 +1,4 @@
-package goncharov.hkbTest.handler;
+package ru.goncharov.hkbTest.handlers;
 
 import com.holdenkarau.spark.testing.JavaDatasetSuiteBase;
 import org.apache.spark.sql.Dataset;
@@ -15,7 +15,7 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
 
     private TemperatureHandler temperatureHandler;
     private List<FinalRow> actualFinalList;
-
+    // Классы-обёртки для псевдо-исходных данных
     public static class CityRow implements Serializable {
         private String year, city, country, overCityColumns;
 
@@ -79,6 +79,7 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
             return overGlobalColumns;
         }
     }
+    // Класс-обёртка для псевдо-конечных данных
     public static class FinalRow implements Serializable {
         private String year, city, country, overCityColumns, overCountryColumns, overGlobalColumns;
 
@@ -106,6 +107,7 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
         temperatureHandler = new TemperatureHandler();
     }
 
+    /** Тест на проверку объединения итоговых данных */
     @Test
     public void joinTest() {
         Dataset<Row> cityData = getCityData();
@@ -113,25 +115,29 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
         Dataset<Row> globalData = getGlobalData();
         Dataset<Row> expectedFinalData = temperatureHandler.joinDatasets(cityData, countryData, globalData);
 
+        // проверка на количество строк
         Assert.assertEquals("Amount_Rows", expectedFinalData.count(), getActualFinalList().size());
         actualFinalList = getActualFinalList();
         expectedFinalData.foreach(row ->
-                correctFinalDataTest(row));
+                correctFinalDataTest(row));   // проверка совпадение данных
     }
 
     private void correctFinalDataTest(Row row) {
+        // инициализация данных из строки по названию колонок
         String year = row.getAs("year");
         String city = row.getAs("city");
         String country = row.getAs("country");
         String overCityColumns = row.getAs("overCityColumns");
         String overCountryColumns = row.getAs("overCountryColumns");
         String overGlobalColumns = row.getAs("overGlobalColumns");
+        // сравнение данных
         boolean contains = containsFinalRow(
                 new FinalRow(year, city, country, overCityColumns, overCountryColumns, overGlobalColumns)
         );
-        Assert.assertTrue("Join_Test", contains);
+        Assert.assertTrue("Correct_Data", contains);
     }
 
+    /** Метод сравнения данных */
     private boolean containsFinalRow(FinalRow finalRow) {
         for (FinalRow actualFinalRow: actualFinalList) {
             if (finalRow.equals(actualFinalRow))
@@ -140,6 +146,7 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
         return false;
     }
 
+    /** Геттеры исходных данных */
     private Dataset<Row> getCityData() {
         List<CityRow> cityRowList = new ArrayList<>();
         cityRowList.add(new CityRow("1750", "Moscow", "Russia", "OverCityValues"));
@@ -163,6 +170,7 @@ public class TemperatureHandlerTest extends JavaDatasetSuiteBase implements Seri
         return sqlContext().createDataFrame(globalRowList, GlobalRow.class);
     }
 
+    /** Геттер эталонных конечных данных */
     private List<FinalRow> getActualFinalList() {
         List<FinalRow> finalRowList = new ArrayList<>();
         finalRowList.add(new FinalRow("1750", "Moscow", "Russia", "OverCityValues", "OverCountryValues_1750_Russia", "OverGlobalValues_1750"));

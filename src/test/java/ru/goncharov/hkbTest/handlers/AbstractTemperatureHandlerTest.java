@@ -1,6 +1,6 @@
-package goncharov.hkbTest.handler;
+package ru.goncharov.hkbTest.handlers;
 
-import com.holdenkarau.spark.testing.JavaDatasetSuiteBase;
+import com.holdenkarau.spark.testing.JavaDataFrameSuiteBase;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.*;
@@ -12,12 +12,21 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase implements Serializable {
+/**
+ *  Абстрактный тестовый класс. Обобщает логику вычисления
+ * эталонных температур для проверки возвращаемых данных.
+ * Создает лист с введёнными начальными данными, которые
+ * переводит в Dataset и отдает на обработку, после чего принимает конечный вариант, который
+ * сравнивает с вычисленными данными из изначального листа.
+ */
+abstract class AbstractTemperatureHandlerTest extends JavaDataFrameSuiteBase implements Serializable {
 
+    /** Интерфейс для создания таблиц с изначальными данными */
     public interface RowDataInterface extends Serializable {
         String getDt ();
         String getAverageTemperature();
     }
+    /** Класс-обёртка для хранения и вычисления эталонных данных */
     public static class TemperatureData implements Serializable {
 
         private String span, city, country;
@@ -25,6 +34,7 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         private Float minTemp, maxTemp, avTemp;
 
         public TemperatureData() {
+
         }
 
         public TemperatureData(String span, float temperature) {
@@ -131,13 +141,15 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         finalData = null;
     }
 
+    /** Тест на количество столбцов */
     @Test
-    public void countColumnsTest() {
+    public void amountColumnsTest() {
         int expectedAmount = finalData.schema().length();
         int actualAmount = getActualSchema().size();
         Assert.assertEquals("Count_columns", expectedAmount, actualAmount);
     }
 
+    /** Тест на соответствие столбцов */
     @Test
     public void allColumnsTest() {
         List<String> expectedSchema = Arrays.asList(
@@ -149,6 +161,7 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         }
     }
 
+    /** Тест на количество строк */
     @Test
     public void countRowsTest() {
         long expectedAmountRows = finalData.count();
@@ -156,9 +169,10 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         Assert.assertEquals("Count_rows", expectedAmountRows, actualAmountRows);
     }
 
+    /** Тест на соответствие вычисленным температурам */
     @Test
     public void temperatureCalculationTest() {
-        finalData.foreach(row -> spanTemperatureTests(row));
+        finalData.foreach(row -> temperatureCompare(row));
     }
 
     private List<String> getActualSchema(){
@@ -176,16 +190,17 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
                 handler.strMinTemperatureForCentury,
                 handler.strMinTemperatureForCentury
         ));
-        schema.addAll(getSpanSchema());
+        schema.addAll(getAreaIdentificationColumns());
         return schema;
     }
 
-    private void spanTemperatureTests(Row row) {
-        yearTemperatureTest(row);
-        decadeTemperatureTest(row);
-        centuryTemperatureTest(row);
+    private void temperatureCompare(Row row) {
+        yearTemperatureCompare(row);
+        decadeTemperatureCompare(row);
+        centuryTemperatureCompare(row);
     }
 
+    /** Метод вычисления эталонных значений */
     private void setTemperLists(List<RowDataInterface> rowDataList) {
         for (RowDataInterface rowData : rowDataList) {
             if (rowData.getAverageTemperature() != null) {
@@ -215,6 +230,7 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
             tempData.handleTemperatures();
     }
 
+    /** добавление новых эталонных температур в коллекции */
     private void put(List<TemperatureData> tempList, TemperatureData inputTemperatureData) {
         float temperature = inputTemperatureData.getFirstTemperature();
         TemperatureData spanData = getTemperatureData(tempList, inputTemperatureData);
@@ -225,18 +241,20 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         tempList.add(inputTemperatureData);
     }
 
+    /** форматирование температур до N-ых числе после запятой */
     private String getFormatTemperFromRow (Row row, String columnName) {
         return numberFormat.format(
                 row.getAs(columnName)
         );
     }
 
-    private void spanTemperatureAsserts (Row row,
-                                         List<TemperatureData> temperDataList,
-                                         String span,
-                                         String strAvTemper,
-                                         String strMinTemper,
-                                         String strMaxTemper)
+    /** Метод сравнивания температур по диапазонам времени */
+    private void spanTemperatureCompare(Row row,
+                                        List<TemperatureData> temperDataList,
+                                        String span,
+                                        String strAvTemper,
+                                        String strMinTemper,
+                                        String strMaxTemper)
     {
         String expectedAvTemper = getFormatTemperFromRow(row, strAvTemper);
         String expectedMinTemper = getFormatTemperFromRow(row, strMinTemper);
@@ -249,48 +267,53 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
         String actualMinTemper = numberFormat.format(temperData.getMinTemp());
         String actualMaxTemper = numberFormat.format(temperData.getMaxTemp());
 
-        temperAssert(strAvTemper, span, expectedAvTemper, actualAvTemper);
-        temperAssert(strMinTemper, span, expectedMinTemper, actualMinTemper);
-        temperAssert(strMaxTemper, span, expectedMaxTemper, actualMaxTemper);
+        temperCompare(strAvTemper, span, expectedAvTemper, actualAvTemper);
+        temperCompare(strMinTemper, span, expectedMinTemper, actualMinTemper);
+        temperCompare(strMaxTemper, span, expectedMaxTemper, actualMaxTemper);
     }
 
-    private void yearTemperatureTest(Row row) {
+    /** Методы конфигурируют свойства диапазона времени и запускают сравнение температур */
+    private void yearTemperatureCompare(Row row) {
         String span = row.getAs(
                 AbstractTemperatureHandler.getStrYear());
         String strAvTemper = handler.getStrAverageTemperatureForYear();
         String strMinTemper = handler.getStrMinTemperatureForYear();
         String strMaxTemper = handler.getStrMaxTemperatureForYear();
-        spanTemperatureAsserts(row, yearTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
+        spanTemperatureCompare(row, yearTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
     }
 
-    private void decadeTemperatureTest(Row row) {
+    private void decadeTemperatureCompare(Row row) {
         String span = row.getAs(
                 AbstractTemperatureHandler.getStrYear());
         span = span.substring(0, DECADE_NUM);
         String strAvTemper = handler.getStrAverageTemperatureForDecade();
         String strMinTemper = handler.getStrMinTemperatureForDecade();
         String strMaxTemper = handler.getStrMaxTemperatureForDecade();
-        spanTemperatureAsserts(row, decadeTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
+        spanTemperatureCompare(row, decadeTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
     }
 
-    private void centuryTemperatureTest(Row row) {
+    private void centuryTemperatureCompare(Row row) {
         String span = row.getAs(
                 AbstractTemperatureHandler.getStrYear());
         span = span.substring(0, CENTURY_NUM);
         String strAvTemper = handler.getStrAverageTemperatureForCentury();
         String strMinTemper = handler.getStrMinTemperatureForCentury();
         String strMaxTemper = handler.getStrMaxTemperatureForCentury();
-        spanTemperatureAsserts(row, centuryTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
+        spanTemperatureCompare(row, centuryTemperDataList, span, strAvTemper, strMinTemper, strMaxTemper);
     }
 
-    private void temperAssert(String expectedColumnName, String span, String expectedTemper, String actualTemper) {
+    /** Assert на равенство температур */
+    private void temperCompare(String expectedColumnName, String span, String expectedTemper, String actualTemper) {
         Assert.assertEquals((expectedColumnName + "_" + span), expectedTemper, actualTemper);
     }
 
+    /** Геттер обработчика по ареалу температур */
     abstract protected AbstractTemperatureHandler getHandler(List<RowDataInterface> rowDataList);
 
+    /** Геттер исходных данных */
     abstract protected List<RowDataInterface> getRowDataList();
 
+    /** Геттеры коллекции температур по диапазону времени */
     abstract protected TemperatureData getTemperatureData(List<TemperatureData> tempDataList,
                                                           TemperatureData dataProperties);
 
@@ -298,6 +321,7 @@ abstract class AbstractTemperatureHandlerTest extends JavaDatasetSuiteBase imple
 
     abstract protected TemperatureData getTemperatureData(RowDataInterface rowData, String span);
 
-    abstract protected List<String> getSpanSchema();
+    /** Геттер идентификационных колонн ареала */
+    abstract protected List<String> getAreaIdentificationColumns();
 
 }
